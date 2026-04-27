@@ -1,17 +1,12 @@
 {
   "common": {
-    "condition_behavior_name": "Condition passes if",
     "condition_for_name": "For at least",
-    "trigger_behavior_name": "Trigger when",
     "trigger_for_name": "For at least"
   },
   "conditions": {
     "is_cleaning": {
       "description": "Tests if one or more vacuum cleaners are cleaning.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::condition_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::condition_for_name%]"
         }
@@ -21,9 +16,6 @@
     "is_docked": {
       "description": "Tests if one or more vacuum cleaners are docked.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::condition_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::condition_for_name%]"
         }
@@ -33,9 +25,6 @@
     "is_encountering_an_error": {
       "description": "Tests if one or more vacuum cleaners are encountering an error.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::condition_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::condition_for_name%]"
         }
@@ -45,9 +34,6 @@
     "is_paused": {
       "description": "Tests if one or more vacuum cleaners are paused.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::condition_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::condition_for_name%]"
         }
@@ -57,9 +43,6 @@
     "is_returning": {
       "description": "Tests if one or more vacuum cleaners are returning to the dock.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::condition_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::condition_for_name%]"
         }
@@ -107,21 +90,6 @@
   "issues": {
     "segments_changed": {
       "title": "Vacuum segments have changed for {entity_id}"
-    }
-  },
-  "selector": {
-    "condition_behavior": {
-      "options": {
-        "all": "All",
-        "any": "Any"
-      }
-    },
-    "trigger_behavior": {
-      "options": {
-        "any": "Any",
-        "first": "First",
-        "last": "Last"
-      }
     }
   },
   "services": {
@@ -205,9 +173,6 @@
     "docked": {
       "description": "Triggers after one or more vacuums have returned to dock.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::trigger_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::trigger_for_name%]"
         }
@@ -217,9 +182,6 @@
     "errored": {
       "description": "Triggers after one or more vacuums encounter an error.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::trigger_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::trigger_for_name%]"
         }
@@ -229,9 +191,6 @@
     "paused_cleaning": {
       "description": "Triggers after one or more vacuums pause cleaning.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::trigger_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::trigger_for_name%]"
         }
@@ -241,9 +200,6 @@
     "started_cleaning": {
       "description": "Triggers after one or more vacuums start cleaning.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::trigger_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::trigger_for_name%]"
         }
@@ -253,9 +209,6 @@
     "started_returning": {
       "description": "Triggers after one or more vacuums start returning to dock.",
       "fields": {
-        "behavior": {
-          "name": "[%key:component::vacuum::common::trigger_behavior_name%]"
-        },
         "for": {
           "name": "[%key:component::vacuum::common::trigger_for_name%]"
         }
