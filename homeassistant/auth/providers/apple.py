@@ -15,7 +15,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import dt as dt_util
 
-from ..models import AuthFlowContext, AuthFlowResult, Credentials, UserMeta
+from ..models import AuthFlowContext, AuthFlowResult, Credentials, User, UserMeta
 from . import AUTH_PROVIDER_SCHEMA, AUTH_PROVIDERS, AuthProvider, LoginFlow
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,13 +101,20 @@ class AppleAuthProvider(AuthProvider):
         if email is not None and not isinstance(email, str):
             raise InvalidAuthError("Invalid Apple email")
 
+        email_verified = _claim_is_true(claims.get("email_verified"))
         if self._allowed_emails:
-            if email is None or email.casefold() not in self._allowed_emails:
+            if (
+                email is None
+                or not email_verified
+                or email.casefold() not in self._allowed_emails
+            ):
                 raise InvalidAuthError("Apple email is not allowed")
 
         flow_result = {"subject": subject}
         if email:
             flow_result["email"] = email
+            if email_verified:
+                flow_result["email_verified"] = "true"
         if name:
             flow_result["name"] = name
 
@@ -188,7 +195,7 @@ class AppleAuthProvider(AuthProvider):
         subject = flow_result["subject"]
 
         for credential in await self.async_credentials():
-            if credential.data["subject"] == subject:
+            if credential.data.get("subject") == subject:
                 return credential
 
         data = {"subject": subject}
@@ -196,7 +203,44 @@ class AppleAuthProvider(AuthProvider):
             if key in flow_result:
                 data[key] = flow_result[key]
 
+        if flow_result.get("email_verified") == "true" and (
+            user := await self._async_get_unique_homeassistant_user_for_email(
+                flow_result.get("email")
+            )
+        ):
+            credentials = self.async_create_credentials(data)
+            await self.store.async_link_user(user, credentials)
+            return credentials
+
         return self.async_create_credentials(data)
+
+    async def _async_get_unique_homeassistant_user_for_email(
+        self, email: str | None
+    ) -> User | None:
+        """Return one existing Home Assistant user with a matching email username."""
+        if not email:
+            return None
+
+        normalized_email = email.casefold()
+        matches = []
+
+        for user in await self.store.async_get_users():
+            if user.system_generated:
+                continue
+
+            for credential in user.credentials:
+                if (
+                    credential.auth_provider_type == "homeassistant"
+                    and credential.data.get("username", "").casefold()
+                    == normalized_email
+                ):
+                    matches.append(user)
+                    break
+
+        if len(matches) == 1:
+            return matches[0]
+
+        return None
 
     async def async_user_meta_for_credentials(
         self, credentials: Credentials
@@ -237,3 +281,12 @@ class AppleLoginFlow(LoginFlow[AppleAuthProvider]):
             ),
             errors=errors,
         )
+
+
+def _claim_is_true(value: Any) -> bool:
+    """Return whether an Apple boolean-like claim is true."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.casefold() == "true"
+    return False

@@ -68,6 +68,7 @@ def make_identity_token(
     issuer: str = apple.APPLE_ISSUER,
     subject: str = "001234.abcdef",
     email: str = "alex@example.com",
+    email_verified: bool | str = True,
 ) -> str:
     """Make a signed Apple-like identity token."""
     now = datetime.now(UTC)
@@ -75,6 +76,7 @@ def make_identity_token(
         {
             "aud": audience,
             "email": email,
+            "email_verified": email_verified,
             "exp": now + timedelta(minutes=5),
             "iat": now,
             "iss": issuer,
@@ -134,6 +136,62 @@ async def test_match_existing_credentials(
     )
     credentials = await provider.async_get_or_create_credentials(flow_result)
     assert credentials is existing
+
+
+async def test_links_verified_email_to_existing_homeassistant_user(
+    manager: AuthManager,
+    provider: apple.AppleAuthProvider,
+    private_key: rsa.RSAPrivateKey,
+) -> None:
+    """Test a verified Apple email links to an existing Home Assistant user."""
+    user = await manager.async_create_user("alex@example.com")
+    homeassistant_credentials = auth_models.Credentials(
+        auth_provider_type="homeassistant",
+        auth_provider_id=None,
+        data={"username": "alex@example.com"},
+        is_new=False,
+    )
+    await manager.async_link_user(user, homeassistant_credentials)
+
+    flow_result = await provider.async_validate_identity_token(
+        make_identity_token(private_key),
+        "Alex",
+    )
+    credentials = await provider.async_get_or_create_credentials(flow_result)
+
+    assert credentials.is_new is False
+    assert credentials.data == {
+        "email": "alex@example.com",
+        "name": "Alex",
+        "subject": "001234.abcdef",
+    }
+    assert await manager.async_get_or_create_user(credentials) is user
+    assert len(user.credentials) == 2
+
+
+async def test_unverified_email_does_not_link_to_existing_homeassistant_user(
+    manager: AuthManager,
+    provider: apple.AppleAuthProvider,
+    private_key: rsa.RSAPrivateKey,
+) -> None:
+    """Test an unverified Apple email does not link to an existing user."""
+    user = await manager.async_create_user("alex@example.com")
+    homeassistant_credentials = auth_models.Credentials(
+        auth_provider_type="homeassistant",
+        auth_provider_id=None,
+        data={"username": "alex@example.com"},
+        is_new=False,
+    )
+    await manager.async_link_user(user, homeassistant_credentials)
+
+    flow_result = await provider.async_validate_identity_token(
+        make_identity_token(private_key, email_verified=False),
+        "Alex",
+    )
+    credentials = await provider.async_get_or_create_credentials(flow_result)
+
+    assert credentials.is_new is True
+    assert len(user.credentials) == 1
 
 
 async def test_invalid_audience_rejected(
